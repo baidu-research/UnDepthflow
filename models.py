@@ -14,6 +14,77 @@ from loss_utils import SSIM, deprocess_image, preprocess_image,\
 
 opt = flags.FLAGS
 
+class Model_stereo(object):
+
+  def __init__(self,
+               image1=None,
+               image2=None,
+               image1r=None,
+               image2r=None,
+               cam2pix=None,
+               pix2cam=None,
+               reuse_scope=False,
+               scope=None):
+    summaries = []
+    
+    with tf.variable_scope(scope, reuse=reuse_scope):
+      feature1_disp = feature_pyramid_disp(image1, reuse=False)
+      feature1r_disp = feature_pyramid_disp(image1r, reuse=True)
+      
+      pred_disp, stereo_smooth_loss = disp_godard(image1, image1r, feature1_disp, feature1r_disp, opt, is_training=True)
+
+      pred_depth = [1./d for d in pred_disp]
+            
+    self.loss = stereo_smooth_loss
+    
+    summaries.append(tf.summary.scalar("total_loss", self.loss))
+    summaries.append(tf.summary.scalar("stereo_smooth_loss", stereo_smooth_loss))
+    
+    tf.summary.image("pred_disp", pred_disp[0][:,:,:,0:1])
+    s = 0
+    tf.summary.image('scale%d_depth_image' % s, pred_depth[s][:,:,:,0:1])
+    tf.summary.image('scale%d_right_disparity_image' % s, pred_disp[s][:,:,:,1:2])
+#     
+    self.summ_op = tf.summary.merge(summaries)
+
+class Model_eval_stereo(object):
+
+  def __init__(self,
+               scope=None):
+    with tf.variable_scope(scope, reuse=True):
+      input_uint8_1 = tf.placeholder(tf.uint8, [1,
+                    opt.img_height, opt.img_width, 3], name='raw_input_1')
+      input_uint8_1r = tf.placeholder(tf.uint8, [1,
+                    opt.img_height, opt.img_width, 3], name='raw_input_1r')
+      input_uint8_2 = tf.placeholder(tf.uint8, [1,
+                    opt.img_height, opt.img_width, 3], name='raw_input_2')
+      input_uint8_2r = tf.placeholder(tf.uint8, [1,
+                    opt.img_height, opt.img_width, 3], name='raw_input_2r')
+      input_intrinsic = tf.placeholder(tf.float32, [3, 3])
+      
+      input_1 = preprocess_image(input_uint8_1)
+      input_2 = preprocess_image(input_uint8_2)
+      input_1r = preprocess_image(input_uint8_1r)
+      input_2r = preprocess_image(input_uint8_2r)
+      
+      feature1_disp = feature_pyramid_disp(input_1, reuse=True)
+      feature1r_disp = feature_pyramid_disp(input_1r, reuse=True)
+      
+      pred_disp = disp_godard(input_1, input_1r, feature1_disp, feature1r_disp, opt, is_training=False)
+      
+    self.input_1 = input_uint8_1
+    self.input_2 = input_uint8_2
+    self.input_r = input_uint8_1r
+    self.input_2r = input_uint8_2r
+    self.input_intrinsic = input_intrinsic
+    
+    self.pred_disp = pred_disp[0][:,:,:,0:1]
+    
+    # Placeholder created for interface consistency
+    self.pred_flow_optical = tf.constant(0.0)
+    self.pred_flow_rigid = tf.constant(0.0)
+    self.pred_disp2 = tf.constant(0.0)
+    self.pred_mask = tf.constant(0.0)
 
 class Model_flow(object):
 

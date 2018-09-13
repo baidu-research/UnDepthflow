@@ -228,12 +228,6 @@ class MonodepthDataloader(object):
         orig_height = tf.cast(tf.shape(image)[0], "float32")
         orig_width = tf.cast(tf.shape(image)[1], "float32")
         
-        # if the dataset is cityscapes, we crop the last fifth to remove the car hood
-#         if self.dataset == 'cityscapes':
-#             o_height    = tf.shape(image)[0]
-#             crop_height = (o_height * 4) // 5
-#             image  =  image[:crop_height,:,:]
-
         image  = tf.image.convert_image_dtype(image,  tf.float32)
         image  = tf.image.resize_images(image,  [self.opt.img_height, self.opt.img_width], tf.image.ResizeMethod.AREA)
         

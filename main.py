@@ -42,7 +42,7 @@ flags.DEFINE_integer('num_iterations', 300000, 'number of training iterations.')
 flags.DEFINE_string('pretrained_model', '',
                     'filepath of a pretrained model to initialize from.')
 flags.DEFINE_string('mode', '',
-                    'selection from three modes of ["flow", "depth", "depthflow"]')
+                    'selection from four modes of ["flow", "depth", "depthflow", "stereo"]')
 flags.DEFINE_string('train_test', 'train',
                     'whether to train or test')
 flags.DEFINE_boolean("retrain", True, "whether to reset the iteration counter")
@@ -102,8 +102,15 @@ def main(unused_argv):
     opt.eval_flow=True
     opt.eval_depth = False
     opt.eval_mask = False
+  elif FLAGS.mode == "stereo":
+    Model = Model_stereo
+    Model_eval = Model_eval_stereo
+    
+    opt.eval_flow = False
+    opt.eval_depth = True
+    opt.eval_mask = False
   else:
-    raise "mode must be one of flow, depth, depthflow"
+    raise "mode must be one of flow, depth, depthflow or stereo"
   
   with tf.Graph().as_default(), tf.device('/cpu:0'):
     global_step = tf.Variable(0, trainable=False)
@@ -142,8 +149,10 @@ def main(unused_argv):
                 var_train_list = var_pose + var_depth + var_flow
               elif FLAGS.mode == "depth":
                 var_train_list = var_pose + var_depth
-              else:
+              elif FLAGS.mode == "flow":
                 var_train_list = var_flow
+              else:
+                var_train_list = var_depth
                 
             else:
               model = Model(split_image1[i], split_image2[i], split_image_r[i], split_image_r_next[i], 
@@ -171,12 +180,6 @@ def main(unused_argv):
     # Create a saver.
     saver = tf.train.Saver(max_to_keep=10)
     
-    saver_rest = tf.train.Saver(
-        list(set(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES))-set(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=".*(Adam_1|Adam).*"))), max_to_keep=1)
-    
-    saver_flow = tf.train.Saver(
-      tf.get_collection(tf.GraphKeys.MODEL_VARIABLES, scope=".*(flow_net|feature_net_flow).*"), max_to_keep=1)
-
     # Build the summary operation from the last tower summaries.
     summary_op = tf.summary.merge(summaries + summaries_cpu)
 
@@ -188,17 +191,21 @@ def main(unused_argv):
     summary_writer = tf.summary.FileWriter(
         FLAGS.trace, graph=sess.graph, flush_secs=10)
     
-    ckpt = tf.train.get_checkpoint_state(FLAGS.trace)
-    if ckpt and ckpt.model_checkpoint_path:
-      saver.restore(sess, ckpt.model_checkpoint_path)
-    elif FLAGS.pretrained_model:
+#     ckpt = tf.train.get_checkpoint_state(FLAGS.trace)
+#     if ckpt and ckpt.model_checkpoint_path:
+#       saver.restore(sess, ckpt.model_checkpoint_path)
+    if FLAGS.pretrained_model:
       sess.run(tf.global_variables_initializer())
       sess.run(tf.local_variables_initializer())
-      if FLAGS.train_test == "test":
+      if FLAGS.train_test == "test" or (not FLAGS.retrain):
         saver.restore(sess, FLAGS.pretrained_model)
       elif FLAGS.mode == "depthflow":
+        saver_rest = tf.train.Saver(
+          list(set(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES))-set(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=".*(Adam_1|Adam).*"))), max_to_keep=1)
         saver_rest.restore(sess, FLAGS.pretrained_model)
       elif FLAGS.mode == "depth":
+        saver_flow = tf.train.Saver(
+          tf.get_collection(tf.GraphKeys.MODEL_VARIABLES, scope=".*(flow_net|feature_net_flow).*"), max_to_keep=1)
         saver_flow.restore(sess, FLAGS.pretrained_model)
       else:
         pass
@@ -216,6 +223,9 @@ def main(unused_argv):
       gt_flows_2012, noc_masks_2012 = load_gt_flow_kitti("kitti_2012")
       gt_flows_2015, noc_masks_2015 = load_gt_flow_kitti("kitti")
       gt_masks = load_gt_mask()
+    else:
+      gt_flows_2012, noc_masks_2012, gt_flows_2015, noc_masks_2015, gt_masks = \
+        None, None, None, None, None 
       
     # Run training.
     for itr in range(start_itr, FLAGS.num_iterations):
@@ -233,7 +243,7 @@ def main(unused_argv):
       
     # Add summary to the summary writer
       
-      if (itr) % (VAL_INTERVAL) == 2:
+      if (itr) % (VAL_INTERVAL) == 2 or FLAGS.train_test == "test":
         test(sess, eval_model, itr, 
              gt_flows_2012, noc_masks_2012, gt_flows_2015, noc_masks_2015,
              gt_masks)

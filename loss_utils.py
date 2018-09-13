@@ -3,6 +3,8 @@ import numpy as np
 import tensorflow.contrib.slim as slim
 import cv2
 
+# Some were adopted from 
+# https://github.com/tensorflow/models/tree/master/research/video_prediction
 def average_gradients(tower_grads):
   """Calculate the average gradient for each shared variable across all towers.
 

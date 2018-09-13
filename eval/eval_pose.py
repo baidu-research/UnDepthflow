@@ -4,6 +4,7 @@ from glob import glob
 from pose_evaluation_utils import *
 from matplotlib import pyplot as plt
 
+
 # Adopted from https://github.com/tinghuiz/SfMLearner
 def eval_snippet(pred_dir, gt_dir):
     pred_files = glob(pred_dir + '/*.txt')
