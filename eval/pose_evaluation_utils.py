@@ -1,7 +1,7 @@
 # Some of the code are from the TUM evaluation toolkit:
 # https://vision.in.tum.de/data/datasets/rgbd-dataset/tools#absolute_trajectory_error_ate
 
-import math,re,os
+import math, re, os
 import numpy as np
 import scipy.misc as sm
 from evaluate_flow import get_scaled_intrinsic_matrix
@@ -9,98 +9,120 @@ from evaluate_flow import get_scaled_intrinsic_matrix
 from tensorflow.python.platform import flags
 opt = flags.FLAGS
 
-def pred_pose(eval_model, opt, sess, seqs):
-  output_dir = opt.trace
-  eval_seqs_start_end = {
-                  "00": [0, 4540], 
-                  "01": [0, 1100], 
-                  "02": [0, 4660], 
-                  "04": [0, 270], 
-                  "05": [0, 2760],
-                  "06": [0, 1100], 
-                  "07": [0, 1100], 
-                  "08": [1100, 5170], 
-                  "09": [0, 1590], 
-                  "10": [0, 1200]
-                  }
 
-  eval_seqs_path  = {
-                  "00": "2011_10_03/2011_10_03_drive_0027_sync", 
-                  "01": "2011_10_03/2011_10_03_drive_0042_sync",
-                  "02": "2011_10_03/2011_10_03_drive_0034_sync", 
-                  "04": "2011_09_30/2011_09_30_drive_0016_sync", 
-                  "05": "2011_09_30/2011_09_30_drive_0018_sync",
-                  "06": "2011_09_30/2011_09_30_drive_0020_sync", 
-                  "07": "2011_09_30/2011_09_30_drive_0027_sync", 
-                  "08": "2011_09_30/2011_09_30_drive_0028_sync", 
-                  "09": "2011_09_30/2011_09_30_drive_0033_sync", 
-                  "10": "2011_09_30/2011_09_30_drive_0034_sync"
-                  }
-  
-  for seq_no in seqs:
-    root_img_path = opt.data_dir + "/" + eval_seqs_path[seq_no] + "/image_02/data/"
-    frame_start, frame_end = eval_seqs_start_end[seq_no]
-    date = eval_seqs_path[seq_no].split("/")[0]
-      
-    curr_pose_mat = np.identity(4)
-    test_result_pose_mat_full = [curr_pose_mat]
-    test_result_pose_mat = [np.reshape(curr_pose_mat[0:3,0:4], [1, -1])]
-     
-    for i in range(frame_start, frame_end):
-      img1 = sm.imread(root_img_path + str(i).zfill(10) + ".png")
-      img2 = sm.imread(root_img_path + str(i+1).zfill(10) + ".png")
-      imgr = sm.imread(re.sub('image_02', 'image_03', root_img_path + str(i).zfill(10) + ".png"))
-      img2r = sm.imread(re.sub('image_02', 'image_03', root_img_path + str(i+1).zfill(10) + ".png"))
-       
-      orig_H, orig_W = img1.shape[0:2]
-      img1 = sm.imresize(img1, (opt.img_height, opt.img_width))
-      img1 = np.expand_dims(img1, axis=0)
-      img2 = sm.imresize(img2, (opt.img_height, opt.img_width))
-      img2 = np.expand_dims(img2, axis=0)
-       
-      imgr = sm.imresize(imgr, (opt.img_height, opt.img_width))
-      imgr = np.expand_dims(imgr, axis=0)
-      img2r = sm.imresize(img2r, (opt.img_height, opt.img_width))
-      img2r = np.expand_dims(img2r, axis=0)
-       
-      calib_file = opt.data_dir + "/" + date + "/calib_cam_to_cam.txt"
-      input_intrinsic = get_scaled_intrinsic_matrix(calib_file, zoom_x=1.0 * opt.img_width / orig_W,
-                                                    zoom_y=1.0 * opt.img_height / orig_H)
-       
-      pred_pose_mat,  = sess.run([eval_model.pred_pose_mat],
-                                  feed_dict={eval_model.input_1: img1,
-                                             eval_model.input_2: img2,
-                                             eval_model.input_r: imgr,
-                                             eval_model.input_2r: img2r,
-                                             eval_model.input_intrinsic: input_intrinsic})
-      
-      # Scale back to absolute scale
-      pred_pose_mat[0:3, 3] = pred_pose_mat[0:3, 3]*0.3087
-       
-      curr_pose_mat = np.matmul(pred_pose_mat, curr_pose_mat)
-      test_result_pose_mat_full.append(curr_pose_mat)
-      test_result_pose_mat.append(np.reshape(np.linalg.inv(curr_pose_mat)[0:3,0:4], [1, -1]))
-     
-    if not os.path.exists(os.path.join(output_dir, "pred_poses")):
-      os.mkdir(os.path.join(output_dir, "pred_poses"))
-    if not os.path.exists(os.path.join(output_dir, "pred_poses", seq_no)):
-      os.mkdir(os.path.join(output_dir, "pred_poses", seq_no))
-    
-    # Save raw pose prediction
-    np.savetxt(output_dir + "/pred_poses/" + seq_no + '.txt', np.concatenate(test_result_pose_mat, axis=0), fmt='%1.4e')
-    
-    if seq_no in ["09", "10"]:
-      with open("./pose_gt_data/" + seq_no + "_full.txt") as f:
-        times = f.readlines()
-      times = [float(t.split(" ")[0]) for t in times]
-      
-      for i in range(len(test_result_pose_mat_full)-4):
-        curr_snippet = []
-        for j in range(5):
-          curr_snippet.append(np.matmul(test_result_pose_mat_full[i], np.linalg.inv(test_result_pose_mat_full[i+j])))
-        # Save aligned pose snippet
-        dump_pose_seq_TUM(os.path.join(output_dir, "pred_poses", seq_no, str(i).zfill(6) + ".txt"), curr_snippet, times[i:(i+5)])
-      
+def pred_pose(eval_model, opt, sess, seqs):
+    output_dir = opt.trace
+    eval_seqs_start_end = {
+        "00": [0, 4540],
+        "01": [0, 1100],
+        "02": [0, 4660],
+        "04": [0, 270],
+        "05": [0, 2760],
+        "06": [0, 1100],
+        "07": [0, 1100],
+        "08": [1100, 5170],
+        "09": [0, 1590],
+        "10": [0, 1200]
+    }
+
+    eval_seqs_path = {
+        "00": "2011_10_03/2011_10_03_drive_0027_sync",
+        "01": "2011_10_03/2011_10_03_drive_0042_sync",
+        "02": "2011_10_03/2011_10_03_drive_0034_sync",
+        "04": "2011_09_30/2011_09_30_drive_0016_sync",
+        "05": "2011_09_30/2011_09_30_drive_0018_sync",
+        "06": "2011_09_30/2011_09_30_drive_0020_sync",
+        "07": "2011_09_30/2011_09_30_drive_0027_sync",
+        "08": "2011_09_30/2011_09_30_drive_0028_sync",
+        "09": "2011_09_30/2011_09_30_drive_0033_sync",
+        "10": "2011_09_30/2011_09_30_drive_0034_sync"
+    }
+
+    for seq_no in seqs:
+        root_img_path = opt.data_dir + "/" + eval_seqs_path[
+            seq_no] + "/image_02/data/"
+        frame_start, frame_end = eval_seqs_start_end[seq_no]
+        date = eval_seqs_path[seq_no].split("/")[0]
+
+        curr_pose_mat = np.identity(4)
+        test_result_pose_mat_full = [curr_pose_mat]
+        test_result_pose_mat = [np.reshape(curr_pose_mat[0:3, 0:4], [1, -1])]
+
+        for i in range(frame_start, frame_end):
+            img1 = sm.imread(root_img_path + str(i).zfill(10) + ".png")
+            img2 = sm.imread(root_img_path + str(i + 1).zfill(10) + ".png")
+            imgr = sm.imread(
+                re.sub('image_02', 'image_03', root_img_path + str(i).zfill(10)
+                       + ".png"))
+            img2r = sm.imread(
+                re.sub('image_02', 'image_03', root_img_path + str(i + 1)
+                       .zfill(10) + ".png"))
+
+            orig_H, orig_W = img1.shape[0:2]
+            img1 = sm.imresize(img1, (opt.img_height, opt.img_width))
+            img1 = np.expand_dims(img1, axis=0)
+            img2 = sm.imresize(img2, (opt.img_height, opt.img_width))
+            img2 = np.expand_dims(img2, axis=0)
+
+            imgr = sm.imresize(imgr, (opt.img_height, opt.img_width))
+            imgr = np.expand_dims(imgr, axis=0)
+            img2r = sm.imresize(img2r, (opt.img_height, opt.img_width))
+            img2r = np.expand_dims(img2r, axis=0)
+
+            calib_file = opt.data_dir + "/" + date + "/calib_cam_to_cam.txt"
+            input_intrinsic = get_scaled_intrinsic_matrix(
+                calib_file,
+                zoom_x=1.0 * opt.img_width / orig_W,
+                zoom_y=1.0 * opt.img_height / orig_H)
+
+            pred_pose_mat, = sess.run([eval_model.pred_pose_mat],
+                                      feed_dict={
+                                          eval_model.input_1: img1,
+                                          eval_model.input_2: img2,
+                                          eval_model.input_r: imgr,
+                                          eval_model.input_2r: img2r,
+                                          eval_model.input_intrinsic:
+                                          input_intrinsic
+                                      })
+
+            # Scale back to absolute scale
+            pred_pose_mat[0:3, 3] = pred_pose_mat[0:3, 3] * 0.3087
+
+            curr_pose_mat = np.matmul(pred_pose_mat, curr_pose_mat)
+            test_result_pose_mat_full.append(curr_pose_mat)
+            test_result_pose_mat.append(
+                np.reshape(np.linalg.inv(curr_pose_mat)[0:3, 0:4], [1, -1]))
+
+        if not os.path.exists(os.path.join(output_dir, "pred_poses")):
+            os.mkdir(os.path.join(output_dir, "pred_poses"))
+        if not os.path.exists(os.path.join(output_dir, "pred_poses", seq_no)):
+            os.mkdir(os.path.join(output_dir, "pred_poses", seq_no))
+
+        # Save raw pose prediction
+        np.savetxt(
+            output_dir + "/pred_poses/" + seq_no + '.txt',
+            np.concatenate(
+                test_result_pose_mat, axis=0),
+            fmt='%1.4e')
+
+        if seq_no in ["09", "10"]:
+            with open("./pose_gt_data/" + seq_no + "_full.txt") as f:
+                times = f.readlines()
+            times = [float(t.split(" ")[0]) for t in times]
+
+            for i in range(len(test_result_pose_mat_full) - 4):
+                curr_snippet = []
+                for j in range(5):
+                    curr_snippet.append(
+                        np.matmul(test_result_pose_mat_full[i],
+                                  np.linalg.inv(test_result_pose_mat_full[i +
+                                                                          j])))
+                # Save aligned pose snippet
+                dump_pose_seq_TUM(
+                    os.path.join(output_dir, "pred_poses", seq_no,
+                                 str(i).zfill(6) + ".txt"), curr_snippet,
+                    times[i:(i + 5)])
+
 
 # Adopted from https://github.com/tinghuiz/SfMLearner
 def compute_ate(gtruth_file, pred_file):
@@ -110,20 +132,23 @@ def compute_ate(gtruth_file, pred_file):
     if len(matches) < 2:
         return False
 
-    gtruth_xyz = np.array([[float(value) for value in gtruth_list[a][0:3]] for a,b in matches])
-    pred_xyz = np.array([[float(value) for value in pred_list[b][0:3]] for a,b in matches])
-    
+    gtruth_xyz = np.array(
+        [[float(value) for value in gtruth_list[a][0:3]] for a, b in matches])
+    pred_xyz = np.array(
+        [[float(value) for value in pred_list[b][0:3]] for a, b in matches])
+
     # Make sure that the first matched frames align (no need for rotational alignment as
     # all the predicted/ground-truth snippets have been converted to use the same coordinate
     # system with the first frame of the snippet being the origin).
     offset = gtruth_xyz[0] - pred_xyz[0]
-    pred_xyz += offset[None,:]
+    pred_xyz += offset[None, :]
 
     # Optimize the scaling factor
-    scale = np.sum(gtruth_xyz * pred_xyz)/np.sum(pred_xyz ** 2)
+    scale = np.sum(gtruth_xyz * pred_xyz) / np.sum(pred_xyz**2)
     alignment_error = pred_xyz * scale - gtruth_xyz
-    rmse = np.sqrt(np.sum(alignment_error ** 2))/len(matches)
+    rmse = np.sqrt(np.sum(alignment_error**2)) / len(matches)
     return rmse
+
 
 def read_file_list(filename):
     """
@@ -142,12 +167,14 @@ def read_file_list(filename):
     """
     file = open(filename)
     data = file.read()
-    lines = data.replace(","," ").replace("\t"," ").split("\n") 
-    list = [[v.strip() for v in line.split(" ") if v.strip()!=""] for line in lines if len(line)>0 and line[0]!="#"]
-    list = [(float(l[0]),l[1:]) for l in list if len(l)>1]
+    lines = data.replace(",", " ").replace("\t", " ").split("\n")
+    list = [[v.strip() for v in line.split(" ") if v.strip() != ""]
+            for line in lines if len(line) > 0 and line[0] != "#"]
+    list = [(float(l[0]), l[1:]) for l in list if len(l) > 1]
     return dict(list)
 
-def associate(first_list, second_list,offset,max_difference):
+
+def associate(first_list, second_list, offset, max_difference):
     """
     Associate two dictionaries of (stamp,data). As the time stamps never match exactly, we aim 
     to find the closest match for every input tuple.
@@ -164,9 +191,8 @@ def associate(first_list, second_list,offset,max_difference):
     """
     first_keys = list(first_list.keys())
     second_keys = list(second_list.keys())
-    potential_matches = [(abs(a - (b + offset)), a, b) 
-                         for a in first_keys 
-                         for b in second_keys 
+    potential_matches = [(abs(a - (b + offset)), a, b)
+                         for a in first_keys for b in second_keys
                          if abs(a - (b + offset)) < max_difference]
     potential_matches.sort()
     matches = []
@@ -175,14 +201,16 @@ def associate(first_list, second_list,offset,max_difference):
             first_keys.remove(a)
             second_keys.remove(b)
             matches.append((a, b))
-    
+
     matches.sort()
     return matches
+
 
 def rot2quat(R):
     rz, ry, rx = mat2euler(R)
     qw, qx, qy, qz = euler2quat(rz, ry, rx)
     return qw, qx, qy, qz
+
 
 def quat2mat(q):
     ''' Calculate rotation matrix corresponding to quaternion
@@ -218,20 +246,26 @@ def quat2mat(q):
     True
     '''
     w, x, y, z = q
-    Nq = w*w + x*x + y*y + z*z
+    Nq = w * w + x * x + y * y + z * z
     if Nq < 1e-8:
         return np.eye(3)
-    s = 2.0/Nq
-    X = x*s
-    Y = y*s
-    Z = z*s
-    wX = w*X; wY = w*Y; wZ = w*Z
-    xX = x*X; xY = x*Y; xZ = x*Z
-    yY = y*Y; yZ = y*Z; zZ = z*Z
-    return np.array(
-           [[ 1.0-(yY+zZ), xY-wZ, xZ+wY ],
-            [ xY+wZ, 1.0-(xX+zZ), yZ-wX ],
-            [ xZ-wY, yZ+wX, 1.0-(xX+yY) ]])
+    s = 2.0 / Nq
+    X = x * s
+    Y = y * s
+    Z = z * s
+    wX = w * X
+    wY = w * Y
+    wZ = w * Z
+    xX = x * X
+    xY = x * Y
+    xZ = x * Z
+    yY = y * Y
+    yZ = y * Z
+    zZ = z * Z
+    return np.array([[1.0 - (yY + zZ), xY - wZ, xZ + wY],
+                     [xY + wZ, 1.0 - (xX + zZ), yZ - wX],
+                     [xZ - wY, yZ + wX, 1.0 - (xX + yY)]])
+
 
 def mat2euler(M, cy_thresh=None, seq='zyx'):
     '''
@@ -286,18 +320,18 @@ def mat2euler(M, cy_thresh=None, seq='zyx'):
             cy_thresh = _FLOAT_EPS_4
     r11, r12, r13, r21, r22, r23, r31, r32, r33 = M.flat
     # cy: sqrt((cos(y)*cos(z))**2 + (cos(x)*cos(y))**2)
-    cy = math.sqrt(r33*r33 + r23*r23)
-    if seq=='zyx':
-        if cy > cy_thresh: # cos(y) not close to zero, standard form
-            z = math.atan2(-r12,  r11) # atan2(cos(y)*sin(z), cos(y)*cos(z))
-            y = math.atan2(r13,  cy) # atan2(sin(y), cy)
-            x = math.atan2(-r23, r33) # atan2(cos(y)*sin(x), cos(x)*cos(y))
-        else: # cos(y) (close to) zero, so x -> 0.0 (see above)
+    cy = math.sqrt(r33 * r33 + r23 * r23)
+    if seq == 'zyx':
+        if cy > cy_thresh:  # cos(y) not close to zero, standard form
+            z = math.atan2(-r12, r11)  # atan2(cos(y)*sin(z), cos(y)*cos(z))
+            y = math.atan2(r13, cy)  # atan2(sin(y), cy)
+            x = math.atan2(-r23, r33)  # atan2(cos(y)*sin(x), cos(x)*cos(y))
+        else:  # cos(y) (close to) zero, so x -> 0.0 (see above)
             # so r21 -> sin(z), r22 -> cos(z) and
-            z = math.atan2(r21,  r22)
-            y = math.atan2(r13,  cy) # atan2(sin(y), cy)
+            z = math.atan2(r21, r22)
+            y = math.atan2(r13, cy)  # atan2(sin(y), cy)
             x = 0.0
-    elif seq=='xyz':
+    elif seq == 'xyz':
         if cy > cy_thresh:
             y = math.atan2(-r31, cy)
             x = math.atan2(r32, r33)
@@ -305,15 +339,18 @@ def mat2euler(M, cy_thresh=None, seq='zyx'):
         else:
             z = 0.0
             if r31 < 0:
-                y = np.pi/2
+                y = np.pi / 2
                 x = atan2(r12, r13)
             else:
-                y = -np.pi/2
+                y = -np.pi / 2
     else:
         raise Exception('Sequence not recognized')
     return z, y, x
 
+
 import functools
+
+
 def euler2mat(z=0, y=0, x=0, isRadian=True):
     ''' Return matrix for rotations around z, y and x axes
     Uses the z, then y, then x convention above
@@ -376,38 +413,30 @@ def euler2mat(z=0, y=0, x=0, isRadian=True):
     '''
 
     if not isRadian:
-        z = ((np.pi)/180.) * z
-        y = ((np.pi)/180.) * y
-        x = ((np.pi)/180.) * x
-    assert z>=(-np.pi) and z < np.pi, 'Inapprorpriate z: %f' % z
-    assert y>=(-np.pi) and y < np.pi, 'Inapprorpriate y: %f' % y
-    assert x>=(-np.pi) and x < np.pi, 'Inapprorpriate x: %f' % x    
+        z = ((np.pi) / 180.) * z
+        y = ((np.pi) / 180.) * y
+        x = ((np.pi) / 180.) * x
+    assert z >= (-np.pi) and z < np.pi, 'Inapprorpriate z: %f' % z
+    assert y >= (-np.pi) and y < np.pi, 'Inapprorpriate y: %f' % y
+    assert x >= (-np.pi) and x < np.pi, 'Inapprorpriate x: %f' % x
 
     Ms = []
     if z:
-            cosz = math.cos(z)
-            sinz = math.sin(z)
-            Ms.append(np.array(
-                            [[cosz, -sinz, 0],
-                             [sinz, cosz, 0],
-                             [0, 0, 1]]))
+        cosz = math.cos(z)
+        sinz = math.sin(z)
+        Ms.append(np.array([[cosz, -sinz, 0], [sinz, cosz, 0], [0, 0, 1]]))
     if y:
-            cosy = math.cos(y)
-            siny = math.sin(y)
-            Ms.append(np.array(
-                            [[cosy, 0, siny],
-                             [0, 1, 0],
-                             [-siny, 0, cosy]]))
+        cosy = math.cos(y)
+        siny = math.sin(y)
+        Ms.append(np.array([[cosy, 0, siny], [0, 1, 0], [-siny, 0, cosy]]))
     if x:
-            cosx = math.cos(x)
-            sinx = math.sin(x)
-            Ms.append(np.array(
-                            [[1, 0, 0],
-                             [0, cosx, -sinx],
-                             [0, sinx, cosx]]))
+        cosx = math.cos(x)
+        sinx = math.sin(x)
+        Ms.append(np.array([[1, 0, 0], [0, cosx, -sinx], [0, sinx, cosx]]))
     if Ms:
-            return functools.reduce(np.dot, Ms[::-1])
+        return functools.reduce(np.dot, Ms[::-1])
     return np.eye(3)
+
 
 def euler2quat(z=0, y=0, x=0, isRadian=True):
     ''' Return quaternion corresponding to these Euler angles
@@ -436,14 +465,14 @@ def euler2quat(z=0, y=0, x=0, isRadian=True):
          http://en.wikipedia.org/wiki/Quaternions#Hamilton_product - to
          formulae from 2.) to give formula for combined rotations.
     '''
-  
+
     if not isRadian:
-        z = ((np.pi)/180.) * z
-        y = ((np.pi)/180.) * y
-        x = ((np.pi)/180.) * x
-    z = z/2.0
-    y = y/2.0
-    x = x/2.0
+        z = ((np.pi) / 180.) * z
+        y = ((np.pi) / 180.) * y
+        x = ((np.pi) / 180.) * x
+    z = z / 2.0
+    y = y / 2.0
+    x = x / 2.0
     cz = math.cos(z)
     sz = math.sin(z)
     cy = math.cos(y)
@@ -451,21 +480,22 @@ def euler2quat(z=0, y=0, x=0, isRadian=True):
     cx = math.cos(x)
     sx = math.sin(x)
     return np.array([
-                     cx*cy*cz - sx*sy*sz,
-                     cx*sy*sz + cy*cz*sx,
-                     cx*cz*sy - sx*cy*sz,
-                     cx*cy*sz + sx*cz*sy])
+        cx * cy * cz - sx * sy * sz, cx * sy * sz + cy * cz * sx,
+        cx * cz * sy - sx * cy * sz, cx * cy * sz + sx * cz * sy
+    ])
+
 
 def pose_vec_to_mat(vec):
     tx = vec[0]
     ty = vec[1]
     tz = vec[2]
-    trans = np.array([tx, ty, tz]).reshape((3,1))
+    trans = np.array([tx, ty, tz]).reshape((3, 1))
     rot = euler2mat(vec[5], vec[4], vec[3])
     Tmat = np.concatenate((rot, trans), axis=1)
-    hfiller = np.array([0, 0, 0, 1]).reshape((1,4))
+    hfiller = np.array([0, 0, 0, 1]).reshape((1, 4))
     Tmat = np.concatenate((Tmat, hfiller), axis=0)
     return Tmat
+
 
 def dump_pose_seq_TUM(out_file, poses, times):
     # First frame as the origin
@@ -477,4 +507,5 @@ def dump_pose_seq_TUM(out_file, poses, times):
             tz = this_pose[2, 3]
             rot = this_pose[:3, :3]
             qw, qx, qy, qz = rot2quat(rot)
-            f.write('%f %f %f %f %f %f %f %f\n' % (times[p], tx, ty, tz, qx, qy, qz, qw))
+            f.write('%f %f %f %f %f %f %f %f\n' %
+                    (times[p], tx, ty, tz, qx, qy, qz, qw))
