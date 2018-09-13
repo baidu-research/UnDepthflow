@@ -69,6 +69,7 @@ flags.DEFINE_float("depth_smooth_weight", 10.0, "Weight for depth smoothness")
 flags.DEFINE_float("ssim_weight", 0.85, "Weight for using ssim loss in pixel loss")
 flags.DEFINE_float("flow_smooth_weight", 10.0, "Weight for flow smoothness")
 flags.DEFINE_float("flow_consist_weight", 0.01, "Weight for flow consistent")
+flags.DEFINE_float("flow_diff_threshold", 4.0, "threshold when comparing optical flow and rigid flow ")
 
 flags.DEFINE_string('eval_pose', '', 'pose seq to evaluate')
 

@@ -21,25 +21,28 @@ You would need to download all of the [KITTI raw data](http://www.cvlibs.net/dat
 As described in the paper, the training are organized into three stages sequentially. 
 
 #### Stage 1: only train optical flow
+In Stage 1, we only train the PWC-Flow net to learn the optical flow. 
 ```
 python main.py --data_dir=/path/to/your/kitti_raw_data --batch_size=4 --mode=flow --train_test=train  --retrain=True  --train_file=./filenames/kitti_train_files_png_4frames.txt --gt_2012_dir=/path/to/your/kitti_2012_gt --gt_2015_dir=/path/to/your/kitti_2015_gt --trace=/path/to/store-your-model-and-logs
 ```
 After around 200K iterations, you should be able to reach the performance of `Ours(PWC-Only)` described in the paper. You can also download our pretrained model `model-flow`.
 
 #### Stage 2: only train depth and pose
+In Stage 2, we train the PWC-Disp and MotionNet to learn the depth and pose.
 ```
 python main.py --data_dir=/path/to/your/kitti_raw_data --batch_size=4  --mode=depth --train_test=train  --retrain=True  --train_file=./filenames/kitti_train_files_png_4frames.txt --gt_2012_dir=/path/to/your/kitti_2012_gt --gt_2015_dir=/path/to/your/kitti_2015_gt --pretrained_model=/path/to/your/pretrained-flow-model-in-stage1  --trace=/path/to/store-your-model-and-logs
 ```
 After around 200K iterations, you sould be able to reach the performance of `Ours(Ego-motion)` described in the paper. You can also download our pretrained model `model-depth`
 
 #### Stage 3: train optical flow, depth, pose and motion segmentation together
+In Stage 3, we train everything together.
 ```
 python main.py --data_dir=/path/to/your/kitti_raw_data --batch_size=4  --mode=depthflow --train_test=train  --retrain=True  --train_file=./filenames/kitti_train_files_png_4frames.txt --gt_2012_dir=/path/to/your/kitti_2012_gt --gt_2015_dir=/path/to/your/kitti_2015_gt --pretrained_model=/path/to/your/pretrained-depth-model-in-stage2 --trace=/path/to/store-your-model-and-logs
 ```
 After around 200K iterations, you should be able to reach the performance of `Ours(Full)` described in the paper. You can also download our pretrained model `model-depthflow`
 
-#### Only train depth using stereo
-If you would like to only train depth using the stereo pairs, you can run the following script. 
+#### Aside: Only train depth using stereo
+If you would like to only train depth using the stereo pairs, you can run the following script. This is different from Stage 2 that it only trains PWC-Disp net using stereo pairs. 
 
 ```
 python main.py --data_dir=/path/to/your/kitti_raw_data --batch_size=4 --mode=stereo --train_test=train  --retrain=True  --train_file=./filenames/kitti_train_files_png_4frames.txt --gt_2012_dir=/path/to/your/kitti_2012_gt --gt_2015_dir=/path/to/your/kitti_2015_gt --trace=/path/to/store-your-model-and-logs
@@ -50,7 +53,7 @@ After around 100K iterations, you should be able to reach the performance of `Ou
 #### Notes
 - You can specify multiple GPUs training with flag `--num_gpus`
 - You can switch to KITTI odometry split by setting `--train_file=./filenames/odo_train_files_png_4frames.txt`
-- If you would like to continue to train a model from a previous checkpoint, you can set `--retrain=False` 
+- If you would like to continue to train a model from a previous checkpoint from the same mode, you can set `--retrain=False` 
 
 ## Evaluation
 The evaluation has already been performed while doing the training. The evaluation results will be printed to the screen.

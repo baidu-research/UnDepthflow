@@ -464,7 +464,7 @@ class Model_depthflow(object):
         
 
         flow_diff = tf.sqrt(tf.reduce_sum(tf.square(depth_flow - optical_flows[s]), axis=3, keep_dims=True))
-        flow_diff_mask = tf.cast(flow_diff < (3.0 / 2**s), tf.float32)
+        flow_diff_mask = tf.cast(flow_diff < (opt.flow_diff_threshold / 2**s), tf.float32)
         occu_region = tf.cast(occu_mask < 0.5, tf.float32)
         ref_exp_mask = tf.clip_by_value(flow_diff_mask + occu_region, clip_value_min=0.0, clip_value_max=1.0)
         
@@ -584,7 +584,7 @@ class Model_eval_depthflow(object):
                                        occu_mask)
       
       flow_diff = tf.sqrt(tf.reduce_sum(tf.square(depth_flow - optical_flows[0]), axis=3, keep_dims=True))
-      flow_diff_mask = tf.cast(flow_diff < (3.0), tf.float32)
+      flow_diff_mask = tf.cast(flow_diff < (opt.flow_diff_threshold), tf.float32)
       occu_region = tf.cast(occu_mask < 0.5, tf.float32)
       ref_exp_mask = tf.clip_by_value(flow_diff_mask + occu_region, clip_value_min=0.0, clip_value_max=1.0)
       
