@@ -108,7 +108,7 @@ def test(sess, eval_model, itr, gt_flows_2012, noc_masks_2012, gt_flows_2015,
                 abs_rel, sq_rel, rms, log_rms, a1, a2, a3, d1_all = eval_depth(
                     gt_depths, pred_depths, gt_disparities, pred_disp_resized)
                 sys.stderr.write(
-                    "{:>10}, {:>10}, {:>10}, {:>10}, {:>10}, {:>10}, {:>10}, {:>10}".
+                    "{:>10}, {:>10}, {:>10}, {:>10}, {:>10}, {:>10}, {:>10}, {:>10} \n".
                     format('abs_rel', 'sq_rel', 'rms', 'log_rms', 'd1_all',
                            'a1', 'a2', 'a3'))
                 sys.stderr.write(
