@@ -5,9 +5,11 @@ import tensorflow as tf
 from optical_flow_warp_old import transformer_old
 import pdb
 from tensorflow.python.platform import app
+"""
+Adopted from https://github.com/tinghuiz/SfMLearner
+"""
 
 
-# Adopted from https://github.com/tinghuiz/SfMLearner
 def gray2rgb(im, cmap='gray'):
     cmap = plt.get_cmap(cmap)
     rgba_img = cmap(im.astype(np.float32))

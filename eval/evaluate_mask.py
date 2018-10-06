@@ -7,11 +7,9 @@ import multiprocessing
 
 from tensorflow.python.platform import flags
 FLAGS = flags.FLAGS
-
-# Adopted from https://github.com/martinkersner/py_img_seg_eval
-'''
-Exceptions
-'''
+"""
+Adopted from https://github.com/martinkersner/py_img_seg_eval
+"""
 
 
 class EvalSegErr(Exception):

@@ -124,7 +124,11 @@ def pred_pose(eval_model, opt, sess, seqs):
                     times[i:(i + 5)])
 
 
-# Adopted from https://github.com/tinghuiz/SfMLearner
+"""
+Adopted from https://github.com/tinghuiz/SfMLearner
+"""
+
+
 def compute_ate(gtruth_file, pred_file):
     gtruth_list = read_file_list(gtruth_file)
     pred_list = read_file_list(pred_file)

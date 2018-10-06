@@ -11,6 +11,154 @@
     Fully convolutional model for monocular depth estimation
     by Clement Godard, Oisin Mac Aodha and Gabriel J. Brostow
     http://visual.cs.ucl.ac.uk/pubs/monoDepth/
+    Copyright © Niantic, Inc. 2018. Patent Pending.
+All rights reserved.
+
+================================================================================
+
+This Software is licensed under the terms of the UCLB ACP-A Licence which allows
+for non-commercial use only. For any other use of the software not covered by
+the terms of this licence, please contact info@uclb.com
+
+================================================================================
+
+UCLB ACP-A Licence
+
+This Agreement is made by and between the Licensor and the Licensee as defined
+and identified below. 
+
+1.  Definitions.
+    In this Agreement (“the Agreement”) the following words shall have the
+    following meanings:
+
+    "Authors" shall mean C. Godard, O. Mac Aodha, G. Brostow
+    "Licensee" Shall mean the person or organisation agreeing to use the
+    Software in accordance with these terms and conditions.
+    "Licensor" shall mean UCL Business PLC whose registered office is at The
+    Network Building, 97 Tottenham Court Road, London W1T 4TP. UCL Business is a
+    the technology transfer arm of University College London (UCL).
+    "Owner" shall mean Niantic Inc., a company organised and existing under the
+    laws of Delaware, whose principal place of business is at 2 Bryant Street,
+    #220, San Francisco, 94105. Owner is a third party beneficiary of this
+    Agreement and may enforce its terms as if it were a party to this Agreement.
+    "Software" shall mean the MonoDepth Software in source code or object code
+    form and any accompanying documentation. 
+
+2.  License.
+    2.1 The Licensor has all necessary rights to grant a licence under: (i)
+    copyright and rights in the nature of copyright subsisting in the Software;
+    and (ii) patent rights resulting from a patent application filed by the
+    Licensor in the United Kingdom in connection with the Software. The Licensor
+    grants the Licensee for the duration of this Agreement, a free of charge,
+    non-sublicenseable, non-exclusive, non-transferable copyright and patent
+    licence (in consequence of said patent application) to use the Software for
+    non-commercial purpose only, including teaching and research at educational
+    institutions and research at not-for-profit research institutions in
+    accordance with the provisions of this Agreement. Non-commercial use
+    expressly excludes any profit-making or commercial activities, including
+    without limitation sale, licence, manufacture or development of commercial
+    products, use in commercially-sponsored research, provision of consulting
+    service, use for or on behalf of any commercial entity, and use in research
+    where a commercial party obtains rights to research results or any other
+    benefit. Any use of the Software for any purpose other than non-commercial
+    research shall automatically terminate this Licence. 
+    
+    2.2 The Licensee is permitted to make modifications to the Software provided
+    that distribution of such modifications is in accordance with Clause 3.
+
+    2.3 Except as expressly permitted by this Agreement and save to the extent
+    and in the circumstances expressly required to be permitted by law, the
+    Licensee is not permitted to rent, lease, sell, offer to sell or loan the
+    Software or its associated documentation.
+
+3.  Redistribution and modifications
+    3.1 The Licensee may reproduce and distribute copies of the Software only to
+    this same GitHub repository with or without modifications, in source format
+    only and provided that any and every distribution is accompanied by an
+    unmodified copy of this Licence and that the following copyright notice is
+    always displayed in an obvious manner: Copyright © Niantic, Inc. 2018. All
+    rights reserved. 
+    
+    3.2 In the case where the Software has been modified, any distribution must
+    include prominent notices indicating which files have been changed.
+    
+    3.3 The Licensee shall cause any work that it distributes or publishes, that
+    in whole or in part contains or is derived from the Software or any part
+    thereof (“Work based on the Software”), to be licensed as a whole at no
+    charge to all third parties under the terms of this Licence.
+
+4.  Duration.
+    This Agreement is effective until the Licensee terminates it by destroying
+    the Software and its documentation together with all copies. It will also
+    terminate automatically if the Licensee fails to abide by its terms. Upon
+    automatic termination the Licensee agrees to destroy all copies of the
+    Software and its documentation.
+
+5.  Disclaimer of Warranties.
+    The Software is provided as is. To the maximum extent permitted by law,
+    Licensor provides no warranties or conditions of any kind, either express or
+    implied, including without limitation, any warranties or condition of title,
+    non-infringement or fitness for a particular purpose. 
+
+6.  Limitation of Liability.
+    In no event shall the Licensor and/or Authors be liable for any direct,
+    indirect, incidental, special, exemplary or consequential damages (including
+    but not limited to, procurement of substitute goods or services; loss of
+    use, data or profits; or business interruption) however caused and on any
+    theory of liability, whether in contract, strict liability, or tort
+    (including negligence or otherwise) arising in any way out of the use of
+    this Software, even if advised of the possibility of such damage.
+
+7.  Indemnity.
+    The Licensee shall indemnify the Licensor and/or Authors against all third
+    party claims that may be asserted against or suffered by the Licensor and/or
+    Authors and which relate to use of the Software by the Licensee or the
+    Recipient.
+
+8.  Intellectual Property.
+    8.1 As between the Licensee and Licensor,copyright and all other
+    intellectual property rights subsisting in or in connection with the
+    Software and supporting information shall remain at all times the property
+    of the Licensor but Licensee acknowledges and agrees that Owner is the owner
+    of all right, title and interest in and to the Software. The Licensee shall
+    acquire no rights in any such material except as expressly provided in this
+    Agreement.
+
+    8.2 No permission is granted to use the trademarks or product names of the
+    Licensor or Owner except as required for reasonable and customary use in
+    describing the origin of the Software and for the purposes of abiding by the
+    terms of Clause 3.1.
+
+    8.3 The Licensee shall promptly notify the Licensor, in sufficient detail,
+    all improvements and new uses of the Software (“Improvements”). The Licensor
+    and its affiliates shall have a non-exclusive, fully paid-up, royalty-free,
+    irrevocable and perpetual licence under the Improvements for non-commercial
+    academic research and teaching purposes.  
+
+    8.4 The Licensee grants an exclusive first option to the Owner to be
+    exercised by the Owner within three (3) years of the date of notification of
+    the Improvements under Clause 8.3 to use any Improvements for commercial
+    purposes on terms to be negotiated and agreed by Licensee and Owner in good
+    faith within a period of six (6) months from the date of exercise of the
+    said option (including without limitation any royalty share in net income
+    from such commercialization payable to the Licensee, as the case may be).
+
+9.  Acknowledgements.
+    The Licensee shall acknowledge the Authors and use of the Software in the
+    publication of any work that uses, or results that are achieved through, the
+    use of the Software. The following citation shall be included in the
+    acknowledgement: “Unsupervised Monocular Depth Estimation with Left-Right
+    Consistency, by C. Godard, O Mac Aodha, G. Brostow, CVPR 2017.”
+
+10. Governing Law.
+    This Agreement shall be governed by, construed and interpreted in accordance
+    with English law and the parties submit to the exclusive jurisdiction of the
+    English courts.
+
+11. Termination.
+    Upon termination of this Agreement, the licenses granted hereunder will
+    terminate and Sections 5, 6, 7, 8, 9, 10 and 11 shall survive any
+    termination of this Agreement. 
 """
 
 from __future__ import absolute_import, division, print_function

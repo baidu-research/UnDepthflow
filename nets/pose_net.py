@@ -1,9 +1,11 @@
 from __future__ import division
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
+"""
+Adopted from https://github.com/tinghuiz/SfMLearner
+"""
 
 
-# Adopted from https://github.com/tinghuiz/SfMLearner
 def pose_exp_net(tgt_image, src_image):
     inputs = tf.concat([tgt_image, src_image], axis=3)
     with tf.variable_scope('pose_net') as sc:
