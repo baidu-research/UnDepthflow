@@ -231,12 +231,9 @@ def main(unused_argv):
         summary_writer = tf.summary.FileWriter(
             FLAGS.trace, graph=sess.graph, flush_secs=10)
 
-        #     ckpt = tf.train.get_checkpoint_state(FLAGS.trace)
-        #     if ckpt and ckpt.model_checkpoint_path:
-        #       saver.restore(sess, ckpt.model_checkpoint_path)
+        sess.run(tf.global_variables_initializer())
+        sess.run(tf.local_variables_initializer())
         if FLAGS.pretrained_model:
-            sess.run(tf.global_variables_initializer())
-            sess.run(tf.local_variables_initializer())
             if FLAGS.train_test == "test" or (not FLAGS.retrain):
                 saver.restore(sess, FLAGS.pretrained_model)
             elif FLAGS.mode == "depthflow":
@@ -257,12 +254,11 @@ def main(unused_argv):
                     max_to_keep=1)
                 saver_flow.restore(sess, FLAGS.pretrained_model)
             else:
-                pass
+                raise Exception(
+                    "pretrained_model not used. Please set train_test=test or retrain=False"
+                )
             if FLAGS.retrain:
                 sess.run(global_step.assign(0))
-        else:
-            sess.run(tf.global_variables_initializer())
-            sess.run(tf.local_variables_initializer())
 
         start_itr = global_step.eval(session=sess)
         tf.train.start_queue_runners(sess)
@@ -290,8 +286,6 @@ def main(unused_argv):
                 if (itr) % (SAVE_INTERVAL) == 2:
                     saver.save(
                         sess, FLAGS.trace + '/model', global_step=global_step)
-
-        # Add summary to the summary writer
 
             if (itr) % (VAL_INTERVAL) == 2 or FLAGS.train_test == "test":
                 test(sess, eval_model, itr, gt_flows_2012, noc_masks_2012,
