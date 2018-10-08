@@ -11,7 +11,7 @@
     Fully convolutional model for monocular depth estimation
     by Clement Godard, Oisin Mac Aodha and Gabriel J. Brostow
     http://visual.cs.ucl.ac.uk/pubs/monoDepth/
-    Copyright © Niantic, Inc. 2018. Patent Pending.
+    Copyright Niantic, Inc. 2018. Patent Pending.
 All rights reserved.
 
 ================================================================================

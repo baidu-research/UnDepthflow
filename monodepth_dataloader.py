@@ -9,7 +9,7 @@
 """
 Adopted from https://github.com/mrharicot/monodepth
 Monodepth data loader.
-Copyright © Niantic, Inc. 2018. Patent Pending.
+Copyright Niantic, Inc. 2018. Patent Pending.
 All rights reserved.
 
 ================================================================================
