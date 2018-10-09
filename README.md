@@ -11,7 +11,8 @@ Please contact Yang Wang (wangyang59@baidu.com) if you have any questions.
 ## Prerequisites
 This codebase was developed and tested with Tensorflow 1.2, CUDA 8.0 and Ubuntu 14.04. 
 
-Some of the codes were borrowed from the excellent works of [Tinghui Zhou](https://github.com/tinghuiz/SfMLearner), [Clément Godard](https://github.com/mrharicot/monodepth), [Huangying Zhan](https://github.com/Huangying-Zhan/Depth-VO-Feat), [Chelsea Finn](https://github.com/tensorflow/models/tree/master/research/video_prediction), [Ruoteng Li](https://github.com/liruoteng/OpticalFlowToolkit) and [Martin Kersner](https://github.com/martinkersner/py_img_seg_eval).
+## Acknowledgement
+Some of the codes were borrowed from the excellent works of [Tinghui Zhou](https://github.com/tinghuiz/SfMLearner), [Clément Godard](https://github.com/mrharicot/monodepth), [Huangying Zhan](https://github.com/Huangying-Zhan/Depth-VO-Feat), [Chelsea Finn](https://github.com/tensorflow/models/tree/master/research/video_prediction), [Ruoteng Li](https://github.com/liruoteng/OpticalFlowToolkit) and [Martin Kersner](https://github.com/martinkersner/py_img_seg_eval). The files borrowed from [Clément Godard](https://github.com/mrharicot/monodepth) and [Huangying Zhan](https://github.com/Huangying-Zhan/Depth-VO-Feat) are licensed under their original license respectively. 
 
 
 ## Preparing training data
