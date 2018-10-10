@@ -1,7 +1,7 @@
 # Joint Unsupervised Learning of Optical Flow and Depth by Watching Stereo Videos
 This codebase implements the system described in the paper:
 
-Joint Unsupervised Learning of Optical Flow and Depth by Watching Stereo Videos
+[Joint Unsupervised Learning of Optical Flow and Depth by Watching Stereo Videos](https://arxiv.org/abs/1810.03654)
 
 Yang Wang, Zhenheng Yang, Peng Wang, Yi Yang, Chenxu Luo and Wei Xu
 
