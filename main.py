@@ -25,6 +25,8 @@ from eval.evaluate_mask import load_gt_mask
 from loss_utils import average_gradients
 
 from test import test
+from test_sintel import test_sintel, test_sintel_flow
+from test_monkaa import test_monkaa
 
 # How often to record tensorboard summaries.
 SUMMARY_INTERVAL = 100
@@ -219,7 +221,7 @@ def main(unused_argv):
                 grads, global_step=global_step)
 
         # Create a saver.
-        saver = tf.train.Saver(max_to_keep=10)
+        saver = tf.train.Saver(max_to_keep=3)
 
         # Build the summary operation from the last tower summaries.
         summary_op = tf.summary.merge(summaries + summaries_cpu)
@@ -233,7 +235,11 @@ def main(unused_argv):
 
         sess.run(tf.global_variables_initializer())
         sess.run(tf.local_variables_initializer())
-        if FLAGS.pretrained_model:
+
+        ckpt = tf.train.get_checkpoint_state(FLAGS.trace)
+        if FLAGS.train_test == "train" and ckpt and ckpt.model_checkpoint_path:
+            saver.restore(sess, ckpt.model_checkpoint_path)
+        elif FLAGS.pretrained_model:
             if FLAGS.train_test == "test" or (not FLAGS.retrain):
                 saver.restore(sess, FLAGS.pretrained_model)
             elif FLAGS.mode == "depthflow":
@@ -288,6 +294,9 @@ def main(unused_argv):
                         sess, FLAGS.trace + '/model', global_step=global_step)
 
             if (itr) % (VAL_INTERVAL) == 2 or FLAGS.train_test == "test":
+                #               test_monkaa(sess, eval_model, itr, "/mnt/scratch/wangyang59/monkaa", "/mnt/scratch/wangyang59/monkaa/monkaa_testing_files_clean.txt")
+                #                 test_sintel(sess, eval_model, itr, "/mnt/scratch/wangyang59/sintel_stereo", "clean")
+                #                 test_sintel_flow(sess, eval_model, itr, gt_dir="/mnt/scratch/wangyang59/mpi-sintel/test/", prefix="final")
                 test(sess, eval_model, itr, gt_flows_2012, noc_masks_2012,
                      gt_flows_2015, noc_masks_2015, gt_masks)
 

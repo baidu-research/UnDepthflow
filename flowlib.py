@@ -96,7 +96,7 @@ def read_flow(filename):
     else:
         w = np.fromfile(f, np.int32, count=1)[0]
         h = np.fromfile(f, np.int32, count=1)[0]
-        print "Reading %d x %d flo file" % (h, w)
+        #print "Reading %d x %d flo file" % (h, w)
         data2d = np.fromfile(f, np.float32, count=2 * w * h)
         # reshape data into 3D array (columns, rows, channels)
         data2d = np.resize(data2d, (h, w, 2))

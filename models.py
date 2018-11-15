@@ -228,11 +228,6 @@ class Model_eval_flow(object):
                 name='raw_input_2r')
             input_intrinsic = tf.placeholder(tf.float32, [3, 3])
 
-            cam2pix, pix2cam = get_multi_scale_intrinsics(input_intrinsic,
-                                                          opt.num_scales)
-            cam2pix = tf.expand_dims(cam2pix, axis=0)
-            pix2cam = tf.expand_dims(pix2cam, axis=0)
-
             input_1 = preprocess_image(input_uint8_1)
             input_2 = preprocess_image(input_uint8_2)
             input_1r = preprocess_image(input_uint8_1r)
@@ -532,6 +527,7 @@ class Model_depthflow(object):
         proj_image_depth_all = []
         proj_error_depth_all = []
         flyout_map_all = []
+        ref_exp_mask_all = []
 
         for s in range(opt.num_scales):
             occu_mask = occu_masks[s]
@@ -621,6 +617,7 @@ class Model_depthflow(object):
             proj_error_depth_all.append(curr_proj_error_depth)
 
             flyout_map_all.append(curr_flyout_map)
+            ref_exp_mask_all.append(ref_exp_mask)
 
         self.loss = (
             10.0 * pixel_loss_depth + stereo_smooth_loss
@@ -652,6 +649,7 @@ class Model_depthflow(object):
                          deprocess_image(proj_image_depth_all[s]))
         tf.summary.image('scale_proj_error_error', proj_error_depth_all[s])
         tf.summary.image('scale_flyout_mask', flyout_map_all[s])
+        tf.summary.image('scale_ref_exp_mask', ref_exp_mask_all[s])
         self.summ_op = tf.summary.merge(summaries)
 
 

@@ -263,6 +263,6 @@ class MonodepthDataloader(object):
             tf.image.ResizeMethod.AREA)
 
         if get_shape:
-            return image, orig_height, orig_width
+            return image[:, :, 0:3], orig_height, orig_width
         else:
-            return image
+            return image[:, :, 0:3]

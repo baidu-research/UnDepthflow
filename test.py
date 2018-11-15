@@ -14,6 +14,7 @@ import re, os
 import sys
 
 from tensorflow.python.platform import flags
+import pdb
 opt = flags.FLAGS
 
 
@@ -102,6 +103,14 @@ def test(sess, eval_model, itr, gt_flows_2012, noc_masks_2012, gt_flows_2015,
 
             ## depth evaluation
             if opt.eval_depth and eval_data == "kitti_2015":
+                #                 pdb.set_trace()
+                #                 test_result_disp = []
+                #                 sssm_root = "/mnt/home/wangyang59/best_sssmnet_2015_training"
+                #                 files = sorted(os.listdir(sssm_root))
+                #                 for file in files:
+                #                   disp = sm.imread(os.path.join(sssm_root, file), -1)
+                #                   disp = disp.astype(np.float32) / 256.0
+                #                   test_result_disp.append(disp / disp.shape[1])
                 print("Evaluate depth at iter [" + str(itr) + "] " + eval_data)
                 gt_depths, pred_depths, gt_disparities, pred_disp_resized = load_depths(
                     test_result_disp, gt_dir, eval_occ=True)
