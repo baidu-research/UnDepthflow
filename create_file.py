@@ -2,6 +2,7 @@ import os
 from random import shuffle
 from eval.sintel_io import cam_read
 import numpy as np
+from eval.monkaa_io import readPFM
 
 root = "/mnt/scratch/wangyang59/monkaa"
 scenes = os.listdir(os.path.join(root, "frames_cleanpass"))
@@ -31,22 +32,35 @@ for scene in scenes:
             left2 = os.path.join(pas, scene, "left", frames[i + 1])
             right2 = os.path.join(pas, scene, "right", frames[i + 1])
             d = left1 + " " + right1 + " " + left2 + " " + right2 + " monkaa_cam.txt\n"
-            if (scene, i) in training:
-                training_data.append(d)
-            elif pas == "frames_cleanpass":
-                testing_data_clean.append(d)
-            else:
-                testing_data_final.append(d)
+
+            frame_no = left1.split("/")[-1][:-4]
+            gt_flow_file = os.path.join(
+                root, "optical_flow", scene, "into_future", "left",
+                "OpticalFlowIntoFuture_%s_L.pfm" % frame_no)
+            gt_disp_file = os.path.join(root, "disparity", scene, "left",
+                                        "%s.pfm" % frame_no)
+            gt_flow = readPFM(gt_flow_file)[0][:, :, 0:2]
+            gt_disp = readPFM(gt_disp_file)[0]
+            flow_max = np.max(np.abs(gt_flow))
+            disp_max = np.max(np.abs(gt_disp))
+
+            if flow_max < 300 and disp_max < 300:
+                if (scene, i) in training:
+                    training_data.append(d)
+                elif pas == "frames_cleanpass":
+                    testing_data_clean.append(d)
+                else:
+                    testing_data_final.append(d)
 
 shuffle(training_data)
 
-with open("monkaa_training_files.txt", 'w') as f:
+with open("monkaa_training_files_small.txt", 'w') as f:
     f.writelines(training_data)
 
-with open("monkaa_testing_files_clean.txt", 'w') as f:
+with open("monkaa_testing_files_clean_small.txt", 'w') as f:
     f.writelines(testing_data_clean)
 
-with open("monkaa_testing_files_final.txt", 'w') as f:
+with open("monkaa_testing_files_final_small.txt", 'w') as f:
     f.writelines(testing_data_final)
 
 ## Create Sintel filenames
@@ -87,3 +101,27 @@ with open("monkaa_testing_files_final.txt", 'w') as f:
 #   new_contents = contents[0:-1] + [line]
 #   with open(os.path.join(root, "depth", "camdata_left", scene, "sintel_cam.txt"), "w") as f:
 #     f.writelines(new_contents)
+
+gt_dir = "/mnt/scratch/wangyang59/monkaa"
+with open("/mnt/scratch/wangyang59/monkaa/monkaa_training_files.txt",
+          "r") as f:
+    filenames = f.readlines()
+
+cnt = 0
+for file in filenames:
+    left_1, right_1, left_2, right_2, _ = file.strip().split()
+    scene = left_1.split("/")[1]
+    frame_no = left_1.split("/")[-1][:-4]
+    gt_flow_file = os.path.join(gt_dir, "optical_flow", scene, "into_future",
+                                "left",
+                                "OpticalFlowIntoFuture_%s_L.pfm" % frame_no)
+    gt_disp_file = os.path.join(gt_dir, "disparity", scene, "left",
+                                "%s.pfm" % frame_no)
+    gt_flow = readPFM(gt_flow_file)[0][:, :, 0:2]
+    gt_disp = readPFM(gt_disp_file)[0]
+    flow_max = np.max(np.abs(gt_flow))
+    disp_max = np.max(np.abs(gt_disp))
+
+    if flow_max > 300 or disp_max > 300:
+        print flow_max, disp_max, left_1
+        cnt += 1

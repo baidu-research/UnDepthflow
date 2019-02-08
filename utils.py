@@ -490,7 +490,9 @@ def inverse_warp_new(depth1,
     disp1_trans = 1.0 / cam_coords1_trans_z
 
     return flow, pose_mat2, disp1_trans, tf.reshape(
-        small_mask, [batch_size, img_height, img_width, 1])
+        small_mask,
+        [batch_size, img_height, img_width, 1]), cam_coords1_trans, tf.matmul(
+            pose_mat2, cam_coords1_hom)[:, 0:3, :], cam_coords2
 
 
 def main(unused_argv):

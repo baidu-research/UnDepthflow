@@ -15,11 +15,19 @@ import sys
 
 from tensorflow.python.platform import flags
 import pdb
+from eval.evaluation_utils import write_test_results
 opt = flags.FLAGS
 
 
-def test(sess, eval_model, itr, gt_flows_2012, noc_masks_2012, gt_flows_2015,
-         noc_masks_2015, gt_masks):
+def test(sess,
+         eval_model,
+         itr,
+         gt_flows_2012,
+         noc_masks_2012,
+         gt_flows_2015,
+         noc_masks_2015,
+         gt_masks,
+         write_results=False):
     with tf.name_scope("evaluation"):
         sys.stderr.write("Evaluation at iter [" + str(itr) + "]: \n")
         if opt.eval_pose != "":
@@ -35,7 +43,7 @@ def test(sess, eval_model, itr, gt_flows_2012, noc_masks_2012, gt_flows_2015,
                     os.path.join("./pose_gt_data/", seq_no))
             odom_eval.eval(opt.trace + "/pred_poses/")
             sys.stderr.write("pose_prediction_finished \n")
-        for eval_data in ["kitti_2012", "kitti_2015"]:
+        for eval_data in ["kitti_2015", "kitti_2012"]:
             test_result_disp, test_result_flow_rigid, test_result_flow_optical, \
             test_result_mask, test_result_disp2, test_image1 = [], [], [], [], [], []
 
@@ -83,7 +91,7 @@ def test(sess, eval_model, itr, gt_flows_2012, noc_masks_2012, gt_flows_2015,
                     zoom_y=1.0 * opt.img_height / orig_H)
 
                 pred_flow_rigid, pred_flow_optical, \
-                pred_disp, pred_disp2, pred_mask= sess.run([eval_model.pred_flow_rigid,
+                pred_disp, pred_disp2, pred_mask = sess.run([eval_model.pred_flow_rigid,
                                                          eval_model.pred_flow_optical,
                                                          eval_model.pred_disp,
                                                          eval_model.pred_disp2,
@@ -183,3 +191,85 @@ def test(sess, eval_model, itr, gt_flows_2012, noc_masks_2012, gt_flows_2015,
             if opt.eval_mask and eval_data == "kitti_2015":
                 mask_err = eval_mask(test_result_mask, gt_masks, opt)
                 sys.stderr.write("mask_err is %s \n" % str(mask_err))
+
+            if write_results:
+                write_test_results(test_result_flow_optical,
+                                   test_result_flow_rigid, test_result_disp,
+                                   test_result_disp2, test_image1, opt,
+                                   eval_data)
+
+
+def test_test(sess, eval_model, itr, write_results=False):
+    with tf.name_scope("evaluation"):
+        sys.stderr.write("Evaluation at iter [" + str(itr) + "]: \n")
+        for eval_data in ["kitti_2015_test", "kitti_2012_test"]:
+            test_result_disp, test_result_flow_rigid, test_result_flow_optical, \
+            test_result_mask, test_result_disp2, test_image1 = [], [], [], [], [], []
+
+            if eval_data == "kitti_2012_test":
+                total_img_num = 195
+                gt_dir = "/mnt/data/wangyang59/kitti_zhenheng/testing_2012"
+            else:
+                total_img_num = 200
+                gt_dir = "/mnt/data/wangyang59/kitti_zhenheng/testing"
+
+            for i in range(total_img_num):
+                img1 = sm.imread(
+                    os.path.join(gt_dir, "image_2",
+                                 str(i).zfill(6) + "_10.png"))
+                img1_orig = img1
+                orig_H, orig_W = img1.shape[0:2]
+                img1 = sm.imresize(img1, (opt.img_height, opt.img_width))
+
+                img2 = sm.imread(
+                    os.path.join(gt_dir, "image_2",
+                                 str(i).zfill(6) + "_11.png"))
+                img2 = sm.imresize(img2, (opt.img_height, opt.img_width))
+
+                imgr = sm.imread(
+                    os.path.join(gt_dir, "image_3",
+                                 str(i).zfill(6) + "_10.png"))
+                imgr = sm.imresize(imgr, (opt.img_height, opt.img_width))
+
+                img2r = sm.imread(
+                    os.path.join(gt_dir, "image_3",
+                                 str(i).zfill(6) + "_11.png"))
+                img2r = sm.imresize(img2r, (opt.img_height, opt.img_width))
+
+                img1 = np.expand_dims(img1, axis=0)
+                img2 = np.expand_dims(img2, axis=0)
+                imgr = np.expand_dims(imgr, axis=0)
+                img2r = np.expand_dims(img2r, axis=0)
+
+                calib_file = os.path.join(gt_dir, "calib_cam_to_cam",
+                                          str(i).zfill(6) + ".txt")
+
+                input_intrinsic = get_scaled_intrinsic_matrix(
+                    calib_file,
+                    zoom_x=1.0 * opt.img_width / orig_W,
+                    zoom_y=1.0 * opt.img_height / orig_H)
+
+                pred_flow_rigid, pred_flow_optical, \
+                pred_disp, pred_disp2, pred_mask = sess.run([eval_model.pred_flow_rigid,
+                                                         eval_model.pred_flow_optical,
+                                                         eval_model.pred_disp,
+                                                         eval_model.pred_disp2,
+                                                         eval_model.pred_mask],
+                                                          feed_dict = {eval_model.input_1: img1,
+                                                                       eval_model.input_2: img2,
+                                                                       eval_model.input_r: imgr,
+                                                                       eval_model.input_2r:img2r,
+                                                                       eval_model.input_intrinsic: input_intrinsic})
+
+                test_result_flow_rigid.append(np.squeeze(pred_flow_rigid))
+                test_result_flow_optical.append(np.squeeze(pred_flow_optical))
+                test_result_disp.append(np.squeeze(pred_disp))
+                test_result_disp2.append(np.squeeze(pred_disp2))
+                test_result_mask.append(np.squeeze(pred_mask))
+                test_image1.append(img1_orig)
+
+            if write_results:
+                write_test_results(test_result_flow_optical,
+                                   test_result_flow_rigid, test_result_disp,
+                                   test_result_disp2, test_image1, opt,
+                                   eval_data)

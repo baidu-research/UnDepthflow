@@ -75,35 +75,53 @@ def convert_disps_to_depths_kitti(gt_disparities, pred_disparities):
     return gt_depths, pred_depths, pred_disparities_resized
 
 
-def write_test_results(test_result_flow_optical, test_result_disp,
-                       test_result_disp2, test_image1, opt, mode):
+def write_test_results(test_result_flow_optical, test_result_flow_rigid,
+                       test_result_disp, test_result_disp2, test_image1, opt,
+                       mode):
     output_dir = opt.trace
-    os.mkdir(os.path.join(output_dir, mode))
-    os.mkdir(os.path.join(output_dir, mode, "flow"))
-    os.mkdir(os.path.join(output_dir, mode, "disp_0"))
-    os.mkdir(os.path.join(output_dir, mode, "disp_1"))
+    if not os.path.exists(os.path.join(output_dir, mode)):
+        os.mkdir(os.path.join(output_dir, mode))
+        os.mkdir(os.path.join(output_dir, mode, "flow"))
+        os.mkdir(os.path.join(output_dir, mode, "flow_rigid"))
+        os.mkdir(os.path.join(output_dir, mode, "disp_0"))
+        os.mkdir(os.path.join(output_dir, mode, "disp_1"))
 
-    for flow, disp0, disp1, img1, i in zip(test_result_flow_optical,
-                                           test_result_disp, test_result_disp2,
-                                           test_image1,
-                                           range(len(test_image1))):
+    for flow, flow_rigid, disp0, disp1, img1, i in zip(
+            test_result_flow_optical, test_result_flow_rigid, test_result_disp,
+            test_result_disp2, test_image1, range(len(test_image1))):
         H, W = img1.shape[0:2]
-        flow[:, :, 0] = flow[:, :, 0] / opt.img_width * W
-        flow[:, :, 1] = flow[:, :, 1] / opt.img_height * H
 
-        flow = cv2.resize(flow, (W, H), interpolation=cv2.INTER_LINEAR)
-        write_flow_png(flow,
-                       os.path.join(output_dir, mode, "flow",
-                                    str(i).zfill(6) + "_10.png"))
+        if opt.mode in ["flow", "depthflow"]:
+            flow[:, :, 0] = flow[:, :, 0] / opt.img_width * W
+            flow[:, :, 1] = flow[:, :, 1] / opt.img_height * H
 
-        disp0 = W * cv2.resize(disp0, (W, H), interpolation=cv2.INTER_LINEAR)
-        skimage.io.imsave(
-            os.path.join(output_dir, mode, "disp_0",
-                         str(i).zfill(6) + "_10.png"),
-            (disp0 * 256).astype('uint16'))
+            flow = cv2.resize(flow, (W, H), interpolation=cv2.INTER_LINEAR)
+            write_flow_png(flow,
+                           os.path.join(output_dir, mode, "flow",
+                                        str(i).zfill(6) + "_10.png"))
 
-        disp1 = W * cv2.resize(disp1, (W, H), interpolation=cv2.INTER_LINEAR)
-        skimage.io.imsave(
-            os.path.join(output_dir, mode, "disp_1",
-                         str(i).zfill(6) + "_10.png"),
-            (disp1 * 256).astype('uint16'))
+        if opt.mode in ["depth", "depthflow"]:
+            flow_rigid[:, :, 0] = flow_rigid[:, :, 0] / opt.img_width * W
+            flow_rigid[:, :, 1] = flow_rigid[:, :, 1] / opt.img_height * H
+
+            flow_rigid = cv2.resize(
+                flow_rigid, (W, H), interpolation=cv2.INTER_LINEAR)
+            write_flow_png(flow_rigid,
+                           os.path.join(output_dir, mode, "flow_rigid",
+                                        str(i).zfill(6) + "_10.png"))
+
+        if opt.mode in ["stereo", "depth", "depthflow"]:
+            disp0 = W * cv2.resize(
+                disp0, (W, H), interpolation=cv2.INTER_LINEAR)
+            skimage.io.imsave(
+                os.path.join(output_dir, mode, "disp_0",
+                             str(i).zfill(6) + "_10.png"),
+                (disp0 * 256).astype('uint16'))
+
+        if opt.mode in ["depthflow"]:
+            disp1 = W * cv2.resize(
+                disp1, (W, H), interpolation=cv2.INTER_LINEAR)
+            skimage.io.imsave(
+                os.path.join(output_dir, mode, "disp_1",
+                             str(i).zfill(6) + "_10.png"),
+                (disp1 * 256).astype('uint16'))

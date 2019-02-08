@@ -127,6 +127,26 @@ def read_flow_png(flow_file):
     return flow
 
 
+def read_flow_png_fill(flow_file):
+    """
+    Read optical flow from KITTI .png file
+    :param flow_file: name of the flow file
+    :return: optical flow data in matrix
+    """
+    flow_object = png.Reader(filename=flow_file)
+    flow_direct = flow_object.asDirect()
+    flow_data = list(flow_direct[2])
+    (w, h) = flow_direct[3]['size']
+    flow = np.zeros((h, w, 3), dtype=np.float64)
+    for i in range(len(flow_data)):
+        flow[i, :, 0] = flow_data[i][0::3]
+        flow[i, :, 1] = flow_data[i][1::3]
+        flow[i, :, 2] = flow_data[i][2::3]
+
+    flow[:, :, 0:2] = (flow[:, :, 0:2] - 2**15) / 64.0
+    return flow
+
+
 def write_flow_png(flo, flow_file):
     h, w, _ = flo.shape
     out_flo = np.ones((h, w, 3), dtype=np.float32)

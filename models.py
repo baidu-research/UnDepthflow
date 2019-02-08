@@ -512,7 +512,7 @@ class Model_depthflow(object):
             for s, flowr in enumerate(optical_flows_rev)
         ]
 
-        _, pose_mat, _, _ = inverse_warp_new(
+        _, pose_mat, _, _, _, _, _ = inverse_warp_new(
             1.0 / pred_disp[0][:, :, :, 0:1], 1.0 /
             pred_disp_rev[0][:, :, :, 0:1], pred_poses, cam2pix[:, 0, :, :],
             pix2cam[:, 0, :, :], optical_flows[0], occu_masks[0])
@@ -620,7 +620,7 @@ class Model_depthflow(object):
             ref_exp_mask_all.append(ref_exp_mask)
 
         self.loss = (
-            10.0 * pixel_loss_depth + stereo_smooth_loss
+            1.0 * pixel_loss_depth + stereo_smooth_loss
         ) + pixel_loss_optical + flow_smooth_loss + flow_consist_loss
 
         summaries.append(tf.summary.scalar("total_loss", self.loss))
@@ -725,7 +725,7 @@ class Model_eval_depthflow(object):
                 clip_value_min=0.0,
                 clip_value_max=1.0)
 
-            depth_flow, pose_mat, disp1_trans, small_mask = inverse_warp_new(
+            depth_flow, pose_mat, disp1_trans, small_mask, cloud1, cloud1_t, cloud2 = inverse_warp_new(
                 1.0 / pred_disp[0][:, :, :, 0:1],
                 1.0 / pred_disp_rev[0][:, :, :, 0:1], pred_poses,
                 cam2pix[:, 0, :, :], pix2cam[:, 0, :, :], optical_flows[0],
@@ -757,3 +757,7 @@ class Model_eval_depthflow(object):
         self.pred_disp2 = disp1_trans*0.0 + \
                           transformer_old(pred_disp_rev[0][:,:,:,0:1], optical_flows[0], [opt.img_height, opt.img_width])*(1.0-0.0)
         self.pred_mask = 1.0 - ref_exp_mask
+        self.cloud1 = cloud1
+        self.cloud1_t = cloud1_t
+        self.cloud2 = cloud2
+        self.occu_mask = occu_region

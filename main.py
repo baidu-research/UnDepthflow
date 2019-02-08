@@ -27,6 +27,7 @@ from loss_utils import average_gradients
 from test import test
 from test_sintel import test_sintel, test_sintel_flow
 from test_monkaa import test_monkaa
+import sys
 
 # How often to record tensorboard summaries.
 SUMMARY_INTERVAL = 100
@@ -49,6 +50,8 @@ flags.DEFINE_string(
     'selection from four modes of ["flow", "depth", "depthflow", "stereo"]')
 flags.DEFINE_string('train_test', 'train', 'whether to train or test')
 flags.DEFINE_boolean("retrain", True, "whether to reset the iteration counter")
+flags.DEFINE_boolean("write_results", False,
+                     "whether to write down the test results")
 
 flags.DEFINE_string('data_dir', '', 'root filepath of data.')
 flags.DEFINE_string('train_file',
@@ -241,7 +244,16 @@ def main(unused_argv):
             saver.restore(sess, ckpt.model_checkpoint_path)
         elif FLAGS.pretrained_model:
             if FLAGS.train_test == "test" or (not FLAGS.retrain):
-                saver.restore(sess, FLAGS.pretrained_model)
+                #saver.restore(sess, FLAGS.pretrained_model)
+                saver_rest = tf.train.Saver(
+                    list(
+                        set(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)) -
+                        set(
+                            tf.get_collection(
+                                tf.GraphKeys.GLOBAL_VARIABLES,
+                                scope=".*(Adam_1|Adam).*"))),
+                    max_to_keep=1)
+                saver_rest.restore(sess, FLAGS.pretrained_model)
             elif FLAGS.mode == "depthflow":
                 saver_rest = tf.train.Saver(
                     list(
@@ -294,11 +306,20 @@ def main(unused_argv):
                         sess, FLAGS.trace + '/model', global_step=global_step)
 
             if (itr) % (VAL_INTERVAL) == 2 or FLAGS.train_test == "test":
-                #               test_monkaa(sess, eval_model, itr, "/mnt/scratch/wangyang59/monkaa", "/mnt/scratch/wangyang59/monkaa/monkaa_testing_files_clean.txt")
+                #                 test_monkaa(sess, eval_model, itr, "/mnt/scratch/wangyang59/monkaa", "/mnt/scratch/wangyang59/monkaa/monkaa_testing_files_clean_small.txt", output_dir=opt.trace, write_file=True)
+                #                 sys.exit(0)
                 #                 test_sintel(sess, eval_model, itr, "/mnt/scratch/wangyang59/sintel_stereo", "clean")
                 #                 test_sintel_flow(sess, eval_model, itr, gt_dir="/mnt/scratch/wangyang59/mpi-sintel/test/", prefix="final")
-                test(sess, eval_model, itr, gt_flows_2012, noc_masks_2012,
-                     gt_flows_2015, noc_masks_2015, gt_masks)
+                test(
+                    sess,
+                    eval_model,
+                    itr,
+                    gt_flows_2012,
+                    noc_masks_2012,
+                    gt_flows_2015,
+                    noc_masks_2015,
+                    gt_masks,
+                    write_results=opt.write_results)
 
 
 if __name__ == '__main__':

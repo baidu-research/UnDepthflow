@@ -14,9 +14,18 @@ import re, os
 import sys
 
 from tensorflow.python.platform import flags
-from flowlib import read_flow, write_flow
+from flowlib import read_flow, write_flow, flow_to_image
 import pdb
+from plot import normalize_disp_for_display
+import pdb
+import matplotlib.pyplot as plt
+
 opt = flags.FLAGS
+
+
+def mkdir_p(path):
+    if not os.path.exists(path):
+        os.mkdir(path)
 
 
 def cal_err_rate(pred_disp, gt_disp):
@@ -27,10 +36,19 @@ def cal_err_rate(pred_disp, gt_disp):
     return 1.0 * bad_pixels.sum() / (gt_disp.shape[0] * gt_disp.shape[1])
 
 
-def test_monkaa(sess, eval_model, itr, gt_dir, test_files):
+def test_monkaa(sess,
+                eval_model,
+                itr,
+                gt_dir,
+                test_files,
+                output_dir,
+                write_file=False):
+    grey_cmap = plt.get_cmap("Greys")
     with tf.name_scope("evaluation"):
         sys.stderr.write("Evaluation at iter [" + str(itr) + "]: \n")
         flow_epes, flow_rigid_epes, disp_err_rates = [], [], []
+        pred_flows, pred_disps, pred_masks, img1s, img2s = [], [], [], [], []
+        gt_flows, gt_disps = [], []
 
         with open(test_files, "r") as f:
             filenames = f.readlines()
@@ -46,10 +64,12 @@ def test_monkaa(sess, eval_model, itr, gt_dir, test_files):
                                         "%s.pfm" % frame_no)
 
             img1 = sm.imread(os.path.join(gt_dir, left_1))
+            img1s.append(img1)
             orig_H, orig_W = img1.shape[0:2]
             img1 = sm.imresize(img1, (opt.img_height, opt.img_width))
 
             img2 = sm.imread(os.path.join(gt_dir, left_2))
+            img2s.append(img2)
             img2 = sm.imresize(img2, (opt.img_height, opt.img_width))
 
             imgr = sm.imread(os.path.join(gt_dir, right_1))
@@ -84,6 +104,11 @@ def test_monkaa(sess, eval_model, itr, gt_dir, test_files):
                                                                    eval_model.input_r: imgr,
                                                                    eval_model.input_2r:img2r,
                                                                    eval_model.input_intrinsic: input_intrinsic})
+            pred_mask = grey_cmap(
+                cv2.resize(
+                    np.squeeze(pred_mask), (orig_W, orig_H),
+                    interpolation=cv2.INTER_LINEAR))[:, :, 0:3]
+            pred_masks.append(0.7 * img1s[-1] + 1.0 * (pred_mask) * 255.0)
 
             if opt.eval_flow:
                 pred_flow = np.squeeze(pred_flow_optical)
@@ -98,6 +123,8 @@ def test_monkaa(sess, eval_model, itr, gt_dir, test_files):
                 flow_epe = np.mean(
                     np.sqrt(np.sum(np.square(pred_flow - gt_flow), axis=2)))
                 flow_epes.append(flow_epe)
+                pred_flows.append(pred_flow)
+                gt_flows.append(gt_flow)
 
                 if opt.mode in ["depth", "depthflow"]:
                     pred_flow = np.squeeze(pred_flow_rigid)
@@ -115,12 +142,13 @@ def test_monkaa(sess, eval_model, itr, gt_dir, test_files):
                     flow_rigid_epes.append(flow_rigid_epe)
 
             if opt.eval_depth:
-                disp_err_rate = cal_err_rate(
-                    gt_disp,
-                    orig_W * cv2.resize(
-                        np.squeeze(pred_disp), (orig_W, orig_H),
-                        interpolation=cv2.INTER_LINEAR))
+                pred_disp = orig_W * cv2.resize(
+                    np.squeeze(pred_disp), (orig_W, orig_H),
+                    interpolation=cv2.INTER_LINEAR)
+                disp_err_rate = cal_err_rate(gt_disp, pred_disp)
                 disp_err_rates.append(disp_err_rate)
+                pred_disps.append(pred_disp)
+                gt_disps.append(gt_disp)
 
         if opt.eval_flow:
             sys.stderr.write("monkaa flow err is %.4f \n" %
@@ -128,7 +156,52 @@ def test_monkaa(sess, eval_model, itr, gt_dir, test_files):
             if opt.mode in ["depth", "depthflow"]:
                 sys.stderr.write("monkaa rigid flow err is %.4f \n" %
                                  (sum(flow_rigid_epes) / len(flow_rigid_epes)))
+            if write_file:
+                mkdir_p(os.path.join(output_dir, "flow"))
+                mkdir_p(os.path.join(output_dir, "flow_gt"))
+                for i, pred_flow, gt_flow in zip(
+                        range(len(pred_flows)), pred_flows, gt_flows):
+                    sm.imsave(
+                        os.path.join(output_dir, "flow",
+                                     str(i).zfill(3) + ".png"),
+                        flow_to_image(pred_flow))
+                    sm.imsave(
+                        os.path.join(output_dir, "flow_gt",
+                                     str(i).zfill(3) + ".png"),
+                        flow_to_image(gt_flow))
+
+                mkdir_p(os.path.join(output_dir, "img1"))
+                mkdir_p(os.path.join(output_dir, "img2"))
+                for i, img1, img2 in zip(range(len(img1s)), img1s, img2s):
+                    sm.imsave(
+                        os.path.join(output_dir, "img1",
+                                     str(i).zfill(3) + "_1.png"), img1)
+                    sm.imsave(
+                        os.path.join(output_dir, "img2",
+                                     str(i).zfill(3) + "_2.png"), img2)
 
         if opt.eval_depth:
             sys.stderr.write("monkaa disp err is %.4f \n" %
                              (sum(disp_err_rates) / len(disp_err_rates)))
+            if write_file:
+                mkdir_p(os.path.join(output_dir, "disp"))
+                mkdir_p(os.path.join(output_dir, "disp_gt"))
+                for i, pred_disp, gt_disp in zip(
+                        range(len(pred_disps)), pred_disps, gt_disps):
+                    disp_plot = normalize_disp_for_display(
+                        pred_disp, cmap="plasma")
+                    gt_disp_plot = normalize_disp_for_display(
+                        gt_disp, cmap="plasma")
+                    sm.imsave(
+                        os.path.join(output_dir, "disp",
+                                     str(i).zfill(3) + ".png"), disp_plot)
+                    sm.imsave(
+                        os.path.join(output_dir, "disp_gt",
+                                     str(i).zfill(3) + ".png"), gt_disp_plot)
+
+        if opt.eval_mask and write_file:
+            mkdir_p(os.path.join(output_dir, "mask"))
+            for i, pred_mask in enumerate(pred_masks):
+                sm.imsave(
+                    os.path.join(output_dir, "mask", str(i).zfill(3) + ".png"),
+                    pred_mask)
