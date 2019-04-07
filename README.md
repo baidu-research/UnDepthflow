@@ -1,11 +1,13 @@
 # Joint Unsupervised Learning of Optical Flow and Depth by Watching Stereo Videos
 This codebase implements the system described in the paper:
 
-[Joint Unsupervised Learning of Optical Flow and Depth by Watching Stereo Videos](https://arxiv.org/abs/1810.03654)
+UnOS: Unified Unsupervised Optical-flow and Stereo-depth Estimation by Watching Videos
 
-Yang Wang, Zhenheng Yang, Peng Wang, Yi Yang, Chenxu Luo and Wei Xu
+More information can also be found in an earlier version of the paper [Joint Unsupervised Learning of Optical Flow and Depth by Watching Stereo Videos](https://arxiv.org/abs/1810.03654)
 
-Please contact Yang Wang (wangyang59@baidu.com) if you have any questions.
+Yang Wang, Peng Wang, Zhenheng Yang, Yi Yang, Chenxu Luo and Wei Xu
+
+Please contact Yang Wang (wangyangcharles@gmail.com) if you have any questions.
 
 
 ## Prerequisites
